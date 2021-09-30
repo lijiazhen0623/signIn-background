@@ -67,7 +67,7 @@ public class TimedTask {
             Login loginBySid = loginService.getLoginBySid(sid);
             Logout logoutBySid = logoutService.getLogoutBySid(sid);
             //更新总时长
-            long l = logoutBySid.getLogoutTime().getTime() - loginBySid.getLoginTime().getTime() + Long.parseLong(onlineUser.getTotalTime());
+            long l = logoutBySid.getLogoutTime().getTime() - loginBySid.getLoginTime().getTime() + Long.parseLong(onlineUser.getTotalTime() == null ? "0" : onlineUser.getTotalTime());
             User user1 = new User(sid, null, l + "", null);
             userService.updateTotalTime(user1);
         }
