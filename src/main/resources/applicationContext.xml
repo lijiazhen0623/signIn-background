@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+       xmlns:tx="http://www.springframework.org/schema/tx" xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd http://www.springframework.org/schema/aop https://www.springframework.org/schema/aop/spring-aop.xsd http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
+
+<!--开启组件扫描，并且不扫描注解@Controller-->
+    <context:component-scan base-package="com.zhen.signIn">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+
+    <!--导入数据连接配置文件-->
+    <context:property-placeholder location="classpath:dbConfig.properties"/>
+
+    <!--创建数据库连接池对象-->
+    <bean id="DataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="${mysql.driver}"/>
+        <property name="url" value="${mysql.url}"/>
+        <property name="username" value="${mysql.username}"/>
+        <property name="password" value="${mysql.password}"/>
+    </bean>
+
+    <!--spring-mybatis整合-->
+    <bean id="SqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="DataSource"/>
+        <property name="configLocation" value="classpath:mybatis-config.xml"/>
+        <property name="mapperLocations" value="classpath:com/zhen/signIn/dao/*.xml"/>
+
+    </bean>
+    <!--在配置一个能批量操作的sqlSession,用于后续对数据库的批量操作-->
+    <bean id="SqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+        <constructor-arg name="sqlSessionFactory" ref="SqlSessionFactory"/>
+        <constructor-arg name="executorType" value="BATCH"/>
+    </bean>
+    <mybatis-spring:scan base-package="com.zhen.signIn.dao"/>
+
+    <!--事务管理-->
+    <bean id="DataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="DataSource"/>
+    </bean>
+
+    <!-- 事务相关控制配置(通知)：例如配置事务的传播机制 (用于增强的代码块)-->
+    <tx:advice id="txAdvice" transaction-manager="DataSourceTransactionManager">
+
+        <tx:attributes>
+            <!-- 所有方法都是事务方法 -->
+            <!--propagation事务的传播特性，默认为REQUIRED-->
+            <tx:method name="*" propagation="REQUIRED"/>
+            <!--方法名以get开始的所有方法  -->
+            <!-- read-only 是否只读-->
+            <tx:method name="get*" read-only="true" propagation="REQUIRED"/>
+            <!--方法名以query开始的所有方法  -->
+            <tx:method name="query*" read-only="true" propagation="REQUIRED"/>
+        </tx:attributes>
+    </tx:advice>
+    <!--配置切面-->
+    <aop:config>
+        <!--配置切点，切入点表达式-->
+        <!--对service包下所有以ServiceImpl结尾的类中的任意参数的任意方法增强-->
+        <aop:pointcut id="txPoint" expression="execution(* com.zhen.signIn.service.serviceImpl.*ServiceImpl.*(..))"/>
+        <!-- 将通知织入切点形成切面 -->
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="txPoint"/>
+    </aop:config>
+
+    <!-- 定时任务相关配置 -->
+    <task:executor id="executor" pool-size="10" queue-capacity="128"/>
+    <task:scheduler id="scheduler" pool-size="10"/>
+    <task:annotation-driven executor="executor" scheduler="scheduler" proxy-target-class="true"/>
+</beans>
