@@ -19,4 +19,10 @@ public interface HistoryService {
      * 清空历史表中签到时间为空的表
      */
     public void clearLoginIsNull();
+
+    /**
+     * 通过学号查找该用户的签到的历史记录
+     * @return
+     */
+    public List<History> getHistoryBySid(String sid);
 }

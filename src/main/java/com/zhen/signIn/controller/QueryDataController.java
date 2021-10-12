@@ -66,4 +66,28 @@ public class QueryDataController {
         List<User> allUser = userService.getAllUser();
         return Message.success("查询成功").add("allUser",allUser);
     }
+
+    /**
+     * 通过学号获取用户接口
+     * @param sid
+     * @return
+     */
+    @RequestMapping(value = "/getUser")
+    @ResponseBody
+    public Message getUser(String sid){
+        User user = userService.getUserBySid(sid);
+        return Message.success("获取用户成功").add("user",user);
+    }
+
+    /**
+     * 通过学号来获取该用户的签到历史数据
+     * @param sid
+     * @return
+     */
+    @RequestMapping(value = "/gethistorybysid")
+    @ResponseBody
+    public Message getHistoryBySid(String sid){
+        List<History> historyBySid = historyService.getHistoryBySid(sid);
+        return Message.success("获取"+sid+"签到的历史数据成功").add("history",historyBySid);
+    }
 }
